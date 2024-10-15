@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recorrido de Árbol Binario</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e9ecef;
+            padding: 20px;
+            color: #343a40;
+        }
+
+        h1 {
+            text-align: center;
+            color: #495057;
+        }
+
+        #input-area {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #tree-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            background-color: #ffffff;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .node {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        input, select {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            width: calc(30% - 22px);
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Permite hacer clic en nodos a través de las líneas */
+        }
+
+        .line {
+            stroke: #007bff;
+            stroke-width: 2;
+        }
+
+        .active {
+            background-color: #28a745 !important; /* Color para el nodo activo */
+        }
+
+        .active-line {
+            stroke: #28a745; /* Color para la línea activa */
+            stroke-width: 4; /* Aumentar el grosor de la línea activa */
+        }
+    </style>
+</head>
+<body>
+    <h1>Recorrido de Árbol Binario</h1>
+    <div id="input-area">
+        <input type="text" id="node-value" placeholder="Valor del nodo (Ej: A)">
+        <select id="parent-node">
+            <option value="">Seleccione Nodo Padre</option>
+        </select>
+        <select id="direction">
+            <option value="left">Izquierda</option>
+            <option value="right">Derecha</option>
+        </select>
+        <button id="add-node">Agregar Nodo</button>
+        <br><br>
+        <button id="run-preorder">Recorrer en Preorden</button>
+        <button id="run-inorder">Recorrer en Inorden</button>
+        <button id="run-postorder">Recorrer en Postorden</button>
+    </div>
+    <div id="tree-container">
+        <svg id="line-svg"></svg> <!-- Contenedor para las líneas -->
+    </div>
+    <div id="result"></div>
+
+    <script>
+        const tree = {};
+        let root = null;
+        let lineCounter = 0; // Contador para líneas únicas
+
+        function addNode(value, parentValue, direction) {
+            if (!root) {
+                root = { value, left: null, right: null };
+                tree[value] = root;
+                updateParentNodeOptions(); // Actualizar las opciones del nodo padre
+            } else {
+                const parentNode = tree[parentValue];
+                if (parentNode) {
+                    insertNode(parentNode, value, direction);
+                } else {
+                    alert('El nodo padre no existe.');
+                }
+            }
+        }
+
+        function insertNode(node, value, direction) {
+            if (direction === "left") {
+                if (!node.left) {
+                    node.left = { value, left: null, right: null };
+                    tree[value] = node.left;
+                    updateParentNodeOptions(); // Actualizar opciones después de agregar el nodo
+                } else {
+                    alert('Ya existe un nodo hijo izquierdo.');
+                }
+            } else if (direction === "right") {
+                if (!node.right) {
+                    node.right = { value, left: null, right: null };
+                    tree[value] = node.right;
+                    updateParentNodeOptions(); // Actualizar opciones después de agregar el nodo
+                } else {
+                    alert('Ya existe un nodo hijo derecho.');
+                }
+            }
+            drawTree(root, 400, 20, 200); // Dibujar árbol
+        }
+
+        function drawTree(node, x, y, offset) {
+            if (!node) return;
+
+            const div = document.createElement('div');
+            div.className = 'node';
+            div.style.left = `${x}px`;
+            div.style.top = `${y}px`;
+            div.innerText = node.value;
+            div.onclick = () => selectNode(node.value); // Función para seleccionar nodo
+            document.getElementById('tree-container').appendChild(div);
+
+            // Dibujar líneas de conexión
+            if (node.left) {
+                const leftChildX = x - offset; // Coordenada x del hijo izquierdo
+                const childY = y + 60; // Coordenada y del hijo
+                drawLine(x + 20, y + 40, leftChildX + 20, childY, `line-${lineCounter}`); // Línea izquierda
+                lineCounter++;
+                drawTree(node.left, leftChildX, childY, offset / 2); // Dibujar nodo izquierdo
+            }
+            if (node.right) {
+                const rightChildX = x + offset; // Coordenada x del hijo derecho
+                const childY = y + 60; // Coordenada y del hijo
+                drawLine(x + 20, y + 40, rightChildX + 20, childY, `line-${lineCounter}`); // Línea derecha
+                lineCounter++;
+                drawTree(node.right, rightChildX, childY, offset / 2); // Dibujar nodo derecho
+            }
+        }
+
+        function drawLine(x1, y1, x2, y2, lineId) {
+            const svg = document.getElementById('line-svg');
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("x1", x1); // Coordenada x inicial
+            line.setAttribute("y1", y1); // Coordenada y inicial
+            line.setAttribute("x2", x2); // Coordenada x final
+            line.setAttribute("y2", y2); // Coordenada y final
+            line.setAttribute("id", lineId); // Asignar ID único a la línea
+            line.classList.add('line');
+            svg.appendChild(line);
+        }
+
+        function selectNode(value) {
+            document.getElementById('parent-node').value = value; // Seleccionar el nodo padre
+        }
+
+        function updateParentNodeOptions() {
+            const parentNodeSelect = document.getElementById('parent-node');
+            parentNodeSelect.innerHTML = '<option value="">Seleccione Nodo Padre</option>'; // Reiniciar opciones
+
+            for (const key in tree) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.text = key;
+                parentNodeSelect.appendChild(option); // Agregar cada nodo al selector
+            }
+        }
+
+        function preorderTraversal(node, result = []) {
+            if (!node) return result;
+            result.push(node.value);
+            preorderTraversal(node.left, result);
+            preorderTraversal(node.right, result);
+            return result;
+        }
+
+        function inorderTraversal(node, result = []) {
+            if (!node) return result;
+            inorderTraversal(node.left, result);
+            result.push(node.value);
+            inorderTraversal(node.right, result);
+            return result;
+        }
+
+        function postorderTraversal(node, result = []) {
+            if (!node) return result;
+            postorderTraversal(node.left, result);
+            postorderTraversal(node.right, result);
+            result.push(node.value);
+            return result;
+        }
+
+        function illuminateNodes(order) {
+            const nodes = document.querySelectorAll('.node');
+            nodes.forEach(node => node.classList.remove('active')); // Limpiar nodos activos
+            const lines = document.querySelectorAll('.line');
+            lines.forEach(line => line.classList.remove('active-line')); // Limpiar líneas activas
+
+            const highlightNextNode = (index) => {
+                if (index < order.length) {
+                    const currentNode = [...nodes].find(node => node.innerText === order[index]);
+                    if (currentNode) {
+                        currentNode.classList.add('active'); // Resaltar nodo actual
+                        if (index > 0) { // Asegurarse de que hay un nodo anterior para resaltar la línea
+                            const lineId = `line-${(index - 1) * 2 + 1}`; // Obtener ID de línea asociado
+                            const line = document.getElementById(lineId);
+                            if (line) {
+                                line.classList.add('active-line'); // Resaltar línea asociada
+                            }
+                        }
+                        setTimeout(() => {
+                            highlightNextNode(index + 1);
+                        }, 1000); // Resaltar el siguiente nodo después de 1 segundo
+                    }
+                }
+            };
+            highlightNextNode(0); // Comenzar el resaltado desde el primer nodo
+        }
+
+        document.getElementById('add-node').onclick = () => {
+            const nodeValue = document.getElementById('node-value').value.trim();
+            const parentValue = document.getElementById('parent-node').value;
+            const direction = document.getElementById('direction').value;
+
+            if (nodeValue) {
+                addNode(nodeValue, parentValue, direction);
+                document.getElementById('node-value').value = ''; // Limpiar campo de entrada
+            } else {
+                alert('Por favor, ingrese un valor para el nodo.');
+            }
+        };
+
+        document.getElementById('run-preorder').onclick = () => {
+            const result = preorderTraversal(root);
+            document.getElementById('result').innerText = `Recorrido en Preorden: ${result.join(', ')}`;
+            illuminateNodes(result); // Iluminar nodos en preorden
+        };
+
+        document.getElementById('run-inorder').onclick = () => {
+            const result = inorderTraversal(root);
+            document.getElementById('result').innerText = `Recorrido en Inorden: ${result.join(', ')}`;
+            illuminateNodes(result); // Iluminar nodos en inorden
+        };
+
+        document.getElementById('run-postorder').onclick = () => {
+            const result = postorderTraversal(root);
+            document.getElementById('result').innerText = `Recorrido en Postorden: ${result.join(', ')}`;
+            illuminateNodes(result); // Iluminar nodos en postorden
+        };
+    </script>
+</body>
+</html>

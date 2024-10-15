@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menú Simple</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .menu {
+            margin: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Proyecto de Matematica Discreta</h1>
+    <div class="menu">
+        <button id="button1">Recorrido de Árbol Binario</button>
+        <button id="button2">Algoritmo de Dijkstra</button>
+    </div>
+
+    <script>
+        document.getElementById('button1').addEventListener('click', function() {
+            window.location.href = 'ARBOL2.html'; // Redirige a pagina1.html
+        });
+
+        document.getElementById('button2').addEventListener('click', function() {
+            window.location.href = 'arboles.html'; // Redirige a pagina2.html
+        });
+    </script>
+</body>
+</html>

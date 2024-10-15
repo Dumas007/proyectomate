@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algoritmo de Dijkstra</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #e9ecef;
+            padding: 20px;
+            color: #343a40;
+        }
+
+        h1 {
+            text-align: center;
+            color: #495057;
+        }
+
+        #input-area {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        #graph-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            background-color: #ffffff;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .node {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #007bff;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            transition: background-color 0.3s, transform 0.3s;
+        }
+
+        .node:hover {
+            transform: scale(1.1);
+        }
+
+        .edge {
+            position: absolute;
+            background-color: #007bff;
+            height: 2px;
+            transform-origin: 0 0;
+            transition: background-color 0.3s;
+        }
+
+        .edge-label {
+            position: absolute;
+            color: #fff;
+            background-color: #007bff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            transform: translate(-50%, -50%);
+            transition: background-color 0.3s;
+        }
+
+        .shortest-path {
+            background-color: #ffc107 !important;
+            animation: pulse 1.5s infinite;
+        }
+
+        .shortest-edge {
+            background-color: #28a745 !important;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            width: calc(33% - 22px);
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Algoritmo de Dijkstra</h1>
+    <div id="input-area">
+        <input type="text" id="node-name" placeholder="Nombre del nodo (Ej: A)">
+        <input type="number" id="node-x" placeholder="Posición X">
+        <input type="number" id="node-y" placeholder="Posición Y">
+        <button id="add-node">Agregar Nodo</button>
+        <br><br>
+        <input type="text" id="start-node" placeholder="Nodo de inicio (Ej: A)">
+        <input type="text" id="end-node" placeholder="Nodo de destino (Ej: B)">
+        <input type="number" id="edge-weight" placeholder="Peso de la arista">
+        <button id="add-edge">Agregar Arista</button>
+        <button id="run-dijkstra">Calcular Ruta Más Corta</button>
+    </div>
+    <div id="graph-container"></div>
+    <div id="result"></div>
+
+    <script>
+        const graph = {};
+        const nodes = {};
+
+        function addNode(name, x, y) {
+            nodes[name] = { x, y, edges: [] };
+            graph[name] = {};
+        }
+
+        function addEdge(start, end, weight) {
+            graph[start][end] = weight;
+            graph[end][start] = weight; // Grafo no dirigido
+            nodes[start].edges.push(end);
+            nodes[end].edges.push(start);
+        }
+
+        function drawGraph() {
+            const container = document.getElementById('graph-container');
+            container.innerHTML = '';
+
+            // Dibujar nodos
+            for (const node in nodes) {
+                const div = document.createElement('div');
+                div.className = 'node';
+                div.style.left = `${nodes[node].x}px`;
+                div.style.top = `${nodes[node].y}px`;
+                div.innerText = node;
+                container.appendChild(div);
+            }
+
+            // Dibujar aristas
+            for (const start in graph) {
+                for (const end in graph[start]) {
+                    if (start < end) { // Evitar dibujar la misma arista dos veces
+                        drawEdge(nodes[start], nodes[end], graph[start][end]);
+                    }
+                }
+            }
+        }
+
+        function drawEdge(startNode, endNode, weight) {
+            const container = document.getElementById('graph-container');
+            const edge = document.createElement('div');
+            edge.className = 'edge';
+
+            const x1 = startNode.x + 20; // Centro del nodo
+            const y1 = startNode.y + 20; // Centro del nodo
+            const x2 = endNode.x + 20; // Centro del nodo
+            const y2 = endNode.y + 20; // Centro del nodo
+
+            const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+            const angle = Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
+
+            // Aplicar las propiedades CSS
+            edge.style.width = `${length}px`;
+            edge.style.transform = `rotate(${angle}deg)`;
+            edge.style.left = `${x1}px`;
+            edge.style.top = `${y1}px`;
+
+            // Mostrar el peso de la arista
+            const edgeLabel = document.createElement('div');
+            edgeLabel.className = 'edge-label';
+            edgeLabel.innerText = weight;
+            edgeLabel.style.left = `${(x1 + x2) / 2}px`; // Centro de la arista
+            edgeLabel.style.top = `${(y1 + y2) / 2}px`; // Centro de la arista
+
+            container.appendChild(edge);
+            container.appendChild(edgeLabel);
+        }
+
+        function dijkstra(start, end) {
+            const distances = {};
+            const visited = {};
+            const previous = {};
+            const queue = [];
+
+            // Inicializar distancias
+            for (const node in graph) {
+                distances[node] = Infinity;
+                previous[node] = null;
+                queue.push(node);
+            }
+
+            distances[start] = 0;
+
+            while (queue.length) {
+                // Obtener el nodo con la distancia más corta
+                let minNode = null;
+                for (const node of queue) {
+                    if (minNode === null || distances[node] < distances[minNode]) {
+                        minNode = node;
+                    }
+                }
+
+                // Si alcanzamos el nodo final, terminamos
+                if (minNode === end) break;
+
+                // Eliminar el nodo de la cola
+                queue.splice(queue.indexOf(minNode), 1);
+                visited[minNode] = true;
+
+                // Actualizar distancias a los vecinos
+                for (const neighbor in graph[minNode]) {
+                    if (!visited[neighbor]) {
+                        const alt = distances[minNode] + graph[minNode][neighbor];
+                        if (alt < distances[neighbor]) {
+                            distances[neighbor] = alt;
+                            previous[neighbor] = minNode;
+                        }
+                    }
+                }
+            }
+
+            return reconstructPath(previous, start, end, distances);
+        }
+
+        function reconstructPath(previous, start, end, distances) {
+            const path = [];
+            let current = end;
+            while (current) {
+                path.unshift(current);
+                current = previous[current];
+            }
+            const cost = distances[end];
+            return { path: path.length > 1 && path[0] === start ? path : [], cost };
+        }
+
+        document.getElementById('add-node').addEventListener('click', () => {
+            const nodeName = document.getElementById('node-name').value.trim();
+            const nodeX = parseInt(document.getElementById('node-x').value);
+            const nodeY = parseInt(document.getElementById('node-y').value);
+
+            if (nodeName && !nodes[nodeName]) {
+                addNode(nodeName, nodeX, nodeY);
+                drawGraph();
+                document.getElementById('node-name').value = '';
+                document.getElementById('node-x').value = '';
+                document.getElementById('node-y').value = '';
+            } else {
+                alert('Nombre del nodo inválido o ya existe.');
+            }
+        });
+
+        document.getElementById('add-edge').addEventListener('click', () => {
+            const startNode = document.getElementById('start-node').value.trim();
+            const endNode = document.getElementById('end-node').value.trim();
+            const edgeWeight = parseInt(document.getElementById('edge-weight').value);
+
+            if (nodes[startNode] && nodes[endNode] && edgeWeight > 0) {
+                addEdge(startNode, endNode, edgeWeight);
+                document.getElementById('start-node').value = '';
+                document.getElementById('end-node').value = '';
+                document.getElementById('edge-weight').value = '';
+                drawGraph();
+            } else {
+                alert('Por favor, asegúrate de que ambos nodos existen y que el peso es válido.');
+            }
+        });
+
+        document.getElementById('run-dijkstra').addEventListener('click', () => {
+            const startNode = document.getElementById('start-node').value.trim();
+            const endNode = document.getElementById('end-node').value.trim();
+
+            if (nodes[startNode] && nodes[endNode]) {
+                const { path, cost } = dijkstra(startNode, endNode);
+                highlightPath(path);
+                displayResult(path, cost);
+            } else {
+                alert('Por favor, asegúrate de que ambos nodos existen.');
+            }
+        });
+
+        function highlightPath(path) {
+            const container = document.getElementById('graph-container');
+            const nodesDiv = document.querySelectorAll('.node');
+            const edgesDiv = document.querySelectorAll('.edge');
+            nodesDiv.forEach(nodeDiv => {
+                nodeDiv.classList.remove('shortest-path');
+            });
+            edgesDiv.forEach(edgeDiv => {
+                edgeDiv.classList.remove('shortest-edge');
+            });
+
+            // Resaltar el camino más corto
+            path.forEach(node => {
+                const nodeDiv = Array.from(nodesDiv).find(div => div.innerText === node);
+                if (nodeDiv) {
+                    nodeDiv.classList.add('shortest-path');
+                }
+            });
+
+            // Resaltar las aristas del camino más corto
+            for (let i = 0; i < path.length - 1; i++) {
+                const start = path[i];
+                const end = path[i + 1];
+                const edgeDiv = Array.from(edgesDiv).find(edge => {
+                    const style = edge.style;
+                    return (
+                        (style.left === `${nodes[start].x}px` && style.top === `${nodes[start].y}px`) &&
+                        (style.transform.includes('rotate') && edge.style.transform.includes(end))
+                    );
+                });
+                if (edgeDiv) {
+                    edgeDiv.classList.add('shortest-edge');
+                }
+            }
+        }
+
+        function displayResult(path, cost) {
+            const resultDiv = document.getElementById('result');
+            if (path.length === 0) {
+                resultDiv.innerHTML = `<strong>No se encontró un camino entre los nodos.</strong>`;
+            } else {
+                resultDiv.innerHTML = `<strong>Ruta más corta:</strong> ${path.join(' → ')} <br> <strong>Costo total:</strong> ${cost}`;
+            }
+        }
+    </script>
+</body>
+</html>
